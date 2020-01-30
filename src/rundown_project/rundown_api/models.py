@@ -5,7 +5,7 @@ from django.contrib.auth.models import BaseUserManager,AbstractBaseUser,Permissi
 class UserProfileManager(BaseUserManager):
     def create_user(self, email, name, password = None):
         if not email:
-            raise ValueError("User must have an email address")
+            raise ValueError("The user must have an email address")
         email = self.normalize_email(email)
         user = self.model(email = email, name = name)
         user.set_password(password)
@@ -64,9 +64,9 @@ class RundownDetail(models.Model):
         return self.title
 
 class Friend(models.Model):
-    user_profile = models.ForeignKey(UserProfile, on_delete= models.CASCADE)
-    friend_id = models.ForeignKey(UserProfile, on_delete= models.CASCADE)
+    user = models.ForeignKey(UserProfile, on_delete= models.CASCADE, related_name = "user")
+    friend = models.ForeignKey(UserProfile, on_delete= models.CASCADE, related_name = "friend")
     is_blocked = models.BooleanField(default=False)
 
     def __str__(self):
-        return str(self.user_profile)
+        return str(self.user)
