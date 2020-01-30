@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.validators import MinLengthValidator
 from django.contrib.auth.models import BaseUserManager,AbstractBaseUser,PermissionsMixin
 
 
@@ -6,6 +7,10 @@ class UserProfileManager(BaseUserManager):
     def create_user(self, email, name, password = None):
         if not email:
             raise ValueError("The user must have an email address")
+
+        if len(password) < 8:
+            raise ValueError("Password must be at least 8 characters long")
+
         email = self.normalize_email(email)
         user = self.model(email = email, name = name)
         user.set_password(password)
@@ -26,7 +31,7 @@ class UserProfile(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
-
+    password = models.CharField(max_length=255,validators=[MinLengthValidator(8)])
     objects = UserProfileManager()
 
     USERNAME_FIELD = 'email'

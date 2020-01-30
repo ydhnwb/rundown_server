@@ -16,9 +16,7 @@ class LoginViewSet(viewsets.ViewSet):
         user = models.UserProfile.objects.filter(email = request.data.get('username')).first()
         if user is None:
             return Response({'message':'No user registered with this email.', 'status':False})
-        else:
-            return ObtainAuthToken().post(request)
-
+        return ObtainAuthToken().post(request)
 
 class RegisterViewSet(viewsets.ViewSet):
     serializer_class = serializers.UserProfileSerializer
@@ -30,9 +28,12 @@ class RegisterViewSet(viewsets.ViewSet):
                 email = serializer.data.get('email'),
                 name = serializer.data.get('name')
             )
-            user.set_password(serializer.data.get('password'))
+            user.set_password(request.data.get('password'))
             user.save()
-            return Response({'message': 'Register successful', 'status': True, 'data': user})
+            return Response({'message': 'Register successful', 'status': True, 'data':{
+                'name':user.name,
+                'email':user.email
+            }})
         else:
             return Response({'message': 'An error due to bad request', 'status':False, 'errors': serializer.errors},
                             status= status.HTTP_400_BAD_REQUEST)
