@@ -49,7 +49,7 @@ class UserProfile(AbstractBaseUser, PermissionsMixin):
 
 class Rundown(models.Model):
     user_profile = models.ForeignKey(UserProfile, on_delete = models.CASCADE)
-    title = models.CharField(max_length=255)
+    title = models.CharField(max_length=255, validators=[MinLengthValidator(1)])
     description = models.TextField()
     created_on = models.DateTimeField(auto_now=True)
     updated_on = models.DateTimeField(auto_now=True)
@@ -60,10 +60,10 @@ class Rundown(models.Model):
 
 class RundownDetail(models.Model):
     rundown = models.ForeignKey(Rundown, on_delete=models.CASCADE)
-    title = models.CharField(max_length=255)
-    description = models.TextField()
+    title = models.CharField(max_length=255, validators=[MinLengthValidator(4)])
+    description = models.TextField(validators=[MinLengthValidator(4)])
     order_num = models.IntegerField(default=0)
-    with_date = models.DateField(null=True, blank=True)
+    with_date = models.DateField(null=True, blank=True, default=None)
 
     def __str__(self):
         return self.title

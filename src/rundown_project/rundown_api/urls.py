@@ -9,7 +9,7 @@ router.register('login', views.LoginViewSet, basename='login')
 router.register('register', views.RegisterViewSet, basename='register')
 router.register('rundown', views.RundownViewSet, basename='rundown')
 router.register('user', views.UserProfileViewSet, basename='user')
-
+router.register('rundown_detail', views.RundownDetailViewSet, basename='rundown_detail')
 
 urlpatterns = [
     path('', include(router.urls))

@@ -120,7 +120,6 @@ class RundownViewSet(viewsets.ViewSet):
     permission_classes = (permissions.PostOnRundown,IsAuthenticated)
     queryset = models.Rundown.objects.all()
 
-
     def list(self, request):
         rundowns = models.Rundown.objects.filter(user_profile = request.user)
         serializer = serializers.RundownSerializer(rundowns, many=True)
@@ -142,8 +141,18 @@ class RundownViewSet(viewsets.ViewSet):
         if rundown is None:
             return Response({'message': 'Rundown not found', 'status': False, 'data': {}}, status = status.HTTP_404_NOT_FOUND)
         else:
+            print(rundown.id)
+            rundown_details = models.RundownDetail.objects.filter(rundown_id= rundown.id)
+            rundown_details = serializers.RundownDetailSerializer(rundown_details, many=True)
             serializer = serializers.RundownSerializer(rundown)
-            return Response({'message': 'OK!', 'status': True, 'data': serializer.data})
+            return Response({'message': 'OK!', 'status': True, 'data': {
+                "id": serializer.data.get('id'),
+                "user_profile": serializer.data.get('user_profile'),
+                "title": serializer.data.get('title'),
+                "description": serializer.data.get('description'),
+                "is_trashed": serializer.data.get('is_trashed'),
+                "rundown_details": rundown_details.data
+            }})
 
 
     def update(self, request, pk = None):
@@ -182,3 +191,85 @@ class RundownViewSet(viewsets.ViewSet):
         self.check_object_permissions(request, rundown)
         rundown.delete()
         return Response({'message': 'Successfully deleted', 'status': True, 'data': {}})
+
+
+class RundownDetailViewSet(viewsets.ViewSet):
+    authentication_classes = (TokenAuthentication,)
+    serializer_class = serializers.RundownDetailSerializer
+    permission_classes = (permissions.PostOnRundown,IsAuthenticated)
+    queryset = models.RundownDetail.objects.all()
+
+
+    def create(self, request):
+        serializer = serializers.RundownDetailSerializer(data = request.data)
+        if serializer.is_valid():
+            rundown = models.Rundown.objects.filter(id = serializer.data.get('rundown')).first()
+            if rundown is None:
+                return Response(
+                    {'message': 'An error due to bad request',
+                     'status': False,
+                     'errors': serializer.errors},
+                    status=status.HTTP_400_BAD_REQUEST)
+
+            rundown_item = models.RundownDetail(title = serializer.data.get('title'),
+                                     description = serializer.data.get('description'),
+                                     rundown = rundown)
+            rundown_item.save()
+            return Response({'message':'Successfully created', 'status': True, 'data': serializer.data})
+
+        return Response({'message': 'An error due to bad request', 'status':False, 'errors': serializer.errors},status= status.HTTP_400_BAD_REQUEST)
+
+    def retrieve(self,request,pk=None):
+        rundown_item = models.RundownDetail.objects.filter(id=pk).first()
+        if rundown_item is None:
+            return Response({'message': 'Rundown item not found', 'status': False, 'data': {}})
+        else:
+            serializer = serializers.RundownDetailSerializer(rundown_item)
+            return Response({'message': 'OK!', 'status': True, 'data': serializer.data})
+
+    def update(self, request, pk=None):
+        validated_data = serializers.RundownDetailSerializer(data=request.data)
+        if validated_data.is_valid():
+            rundown_item = models.RundownDetail.objects.filter(id=pk).first()
+            if rundown_item is None:
+                return Response({'message': 'Rundown item not found', 'status': False, 'data': {}})
+            else:
+                rundown = models.Rundown.objects.filter(id=rundown_item.rundown_id).first()
+                self.check_object_permissions(request, rundown)
+                rundown_item.title = validated_data.data.get('title', rundown_item.title)
+                rundown_item.description = validated_data.data.get('description', rundown_item.description)
+                rundown_item.with_date = validated_data.data.get('with_date', rundown_item.with_date)
+                rundown_item.order_num = validated_data.data.get('order_num', rundown_item.order_num)
+                rundown_item.save()
+                serializer = serializers.RundownDetailSerializer(rundown_item)
+                return Response({'message': 'Successfully updated!', 'status': True, 'data': serializer.data})
+
+        return Response({'message': 'An error due to bad request', 'status': False, 'errors': validated_data.errors},
+                        status=status.HTTP_400_BAD_REQUEST)
+
+
+    def partial_update(self, request, pk = None):
+        rundown_item = models.RundownDetail.objects.filter(id = pk).first()
+        if rundown_item is None:
+            return Response({'message':'Rundown item not found', 'status':False, 'data':{}})
+        else:
+            rundown = models.Rundown.objects.filter(id=rundown_item.rundown_id).first()
+            self.check_object_permissions(request, rundown)
+            serializer = serializers.RundownDetailSerializer(rundown_item, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response({'message': 'Successfully partial update!', 'status': True, 'data':serializer.data})
+
+            return Response({'message': 'An error due to bad request', 'status': False, 'errors': serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST)
+
+
+    def destroy(self, request, pk=None):
+        rundown_item = models.RundownDetail.objects.filter(id = pk).first()
+        if rundown_item is None:
+            return Response({'message':'Rundown not found', 'status':False, 'data':{}})
+        rundown = models.Rundown.objects.filter(id = rundown_item.rundown_id).first()
+        self.check_object_permissions(request, rundown)
+        rundown_item.delete()
+        return Response({'message': 'Successfully deleted', 'status': True, 'data': {}})
+
