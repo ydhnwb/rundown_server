@@ -15,7 +15,8 @@ class LoginViewSet(viewsets.ViewSet):
     def create(self, request):
         user = models.UserProfile.objects.filter(email = request.data.get('username')).first()
         if user is None:
-            return Response({'message':'No user registered with this email.', 'status':False})
+            return Response({'message':'No user registered with this email.', 'status':False},
+                            status = status.HTTP_404_NOT_FOUND)
         serializer = self.serializer_class(data=request.data,context={'request': request})
         if serializer.is_valid(raise_exception=True):
             user = serializer.validated_data['user']
@@ -45,11 +46,11 @@ class RegisterViewSet(viewsets.ViewSet):
                 'email':user.email
             }})
         else:
-            return Response({'message': 'An error due to bad request', 'status':False, 'errors': serializer.errors},status= status.HTTP_400_BAD_REQUEST)
+            return Response({'message': 'An error due to bad request', 'status':False, 'errors': serializer.errors},
+                            status= status.HTTP_400_BAD_REQUEST)
 
 
 class UserProfileViewSet(viewsets.ViewSet):
-    queryset = models.UserProfile.objects.all()
     authentication_classes = (TokenAuthentication,)
     permission_classes = (permissions.IsTheOwner,IsAuthenticated)
     filter_backends = (filters.SearchFilter,)
@@ -57,13 +58,14 @@ class UserProfileViewSet(viewsets.ViewSet):
     serializer_class = (serializers.UserProfileSerializer,)
 
     def list(self, request):
-        serializer = serializers.UserProfileSerializer(self.queryset, many=True)
+        serializer = serializers.UserProfileSerializer(models.UserProfile.objects.all(), many=True)
         return Response({'message':'OK!', 'status': True, 'data':serializer.data})
 
     def retrieve(self, request, pk=None):
         user = models.UserProfile.objects.filter(id = pk).first()
         if user is None:
-            return Response({'message':'User not found', 'status': False, 'data':{}})
+            return Response({'message':'User not found', 'status': False, 'data':{}},
+                            status = status.HTTP_404_NOT_FOUND)
         else:
             serializer = serializers.UserProfileSerializer(user)
             return Response({'message':'OK!', 'status': True, 'data': serializer.data})
@@ -73,7 +75,8 @@ class UserProfileViewSet(viewsets.ViewSet):
         if validated_data.is_valid():
             user = models.UserProfile.objects.filter(id = pk).first()
             if user is None:
-                return Response({'message':'User not found', 'status':False, 'data':{}})
+                return Response({'message':'User not found', 'status':False, 'data':{}},
+                                status = status.HTTP_404_NOT_FOUND)
             else:
                 self.check_object_permissions(request, user)
                 user.name = validated_data.data.get('name', user.name)
@@ -90,7 +93,8 @@ class UserProfileViewSet(viewsets.ViewSet):
     def partial_update(self, request, pk = None):
         user = models.UserProfile.objects.filter(id = pk).first()
         if user is None:
-            return Response({'message':'User not found', 'status':False, 'data':{}})
+            return Response({'message':'User not found', 'status':False, 'data':{}},
+                            status = status.HTTP_404_NOT_FOUND)
         else:
             self.check_object_permissions(request, user)
             serializer = serializers.UserProfileSerializer(user, data=request.data, partial=True)
@@ -107,7 +111,8 @@ class UserProfileViewSet(viewsets.ViewSet):
     def destroy(self, request, pk=None):
         user = models.UserProfile.objects.filter(id = pk).first()
         if user is None:
-            return Response({'message':'User not found', 'status':False, 'data':{}})
+            return Response({'message':'User not found', 'status':False, 'data':{}},
+                            status = status.HTTP_404_NOT_FOUND)
 
         self.check_object_permissions(request, user)
         user.delete()
@@ -118,7 +123,6 @@ class RundownViewSet(viewsets.ViewSet):
     authentication_classes = (TokenAuthentication,)
     serializer_class = serializers.RundownSerializer
     permission_classes = (permissions.PostOnRundown,IsAuthenticated)
-    queryset = models.Rundown.objects.all()
 
     def list(self, request):
         rundowns = models.Rundown.objects.filter(user_profile = request.user)
@@ -131,6 +135,7 @@ class RundownViewSet(viewsets.ViewSet):
             rundown = models.Rundown(title = serializer.data.get('title'),
                                      description = serializer.data.get('description'),
                                      user_profile = request.user)
+            self.check_object_permissions(request, rundown)
             rundown.save()
             return Response({'message':'Successfully created', 'status': True, 'data': serializer.data})
 
@@ -141,7 +146,6 @@ class RundownViewSet(viewsets.ViewSet):
         if rundown is None:
             return Response({'message': 'Rundown not found', 'status': False, 'data': {}}, status = status.HTTP_404_NOT_FOUND)
         else:
-            print(rundown.id)
             rundown_details = models.RundownDetail.objects.filter(rundown_id= rundown.id)
             rundown_details = serializers.RundownDetailSerializer(rundown_details, many=True)
             serializer = serializers.RundownSerializer(rundown)
@@ -172,7 +176,8 @@ class RundownViewSet(viewsets.ViewSet):
     def partial_update(self, request, pk = None):
         rundown = models.Rundown.objects.filter(id = pk).first()
         if rundown is None:
-            return Response({'message':'User not found', 'status':False, 'data':{}})
+            return Response({'message':'User not found', 'status':False, 'data':{}},
+                            status=status.HTTP_404_NOT_FOUND)
         else:
             self.check_object_permissions(request, rundown)
             serializer = serializers.RundownSerializer(rundown, data=request.data, partial=True)
@@ -186,7 +191,8 @@ class RundownViewSet(viewsets.ViewSet):
     def destroy(self, request, pk = None):
         rundown = models.Rundown.objects.filter(id = pk).first()
         if rundown is None:
-            return Response({'message':'Rundown not found', 'status':False, 'data':{}})
+            return Response({'message':'Rundown not found', 'status':False, 'data':{}},
+                            status=status.HTTP_404_NOT_FOUND)
 
         self.check_object_permissions(request, rundown)
         rundown.delete()
@@ -197,8 +203,6 @@ class RundownDetailViewSet(viewsets.ViewSet):
     authentication_classes = (TokenAuthentication,)
     serializer_class = serializers.RundownDetailSerializer
     permission_classes = (permissions.PostOnRundown,IsAuthenticated)
-    queryset = models.RundownDetail.objects.all()
-
 
     def create(self, request):
         serializer = serializers.RundownDetailSerializer(data = request.data)
@@ -251,7 +255,8 @@ class RundownDetailViewSet(viewsets.ViewSet):
     def partial_update(self, request, pk = None):
         rundown_item = models.RundownDetail.objects.filter(id = pk).first()
         if rundown_item is None:
-            return Response({'message':'Rundown item not found', 'status':False, 'data':{}})
+            return Response({'message':'Rundown item not found', 'status':False, 'data':{}},
+                            status=status.HTTP_404_NOT_FOUND)
         else:
             rundown = models.Rundown.objects.filter(id=rundown_item.rundown_id).first()
             self.check_object_permissions(request, rundown)
@@ -267,9 +272,40 @@ class RundownDetailViewSet(viewsets.ViewSet):
     def destroy(self, request, pk=None):
         rundown_item = models.RundownDetail.objects.filter(id = pk).first()
         if rundown_item is None:
-            return Response({'message':'Rundown not found', 'status':False, 'data':{}})
+            return Response({'message':'Rundown item not found', 'status':False, 'data':{}},
+                            status=status.HTTP_404_NOT_FOUND)
         rundown = models.Rundown.objects.filter(id = rundown_item.rundown_id).first()
         self.check_object_permissions(request, rundown)
         rundown_item.delete()
         return Response({'message': 'Successfully deleted', 'status': True, 'data': {}})
+
+
+class FriendViewSet(viewsets.ViewSet):
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (permissions.IsTheOwnerOfFriend, IsAuthenticated)
+    serializer_class = serializers.FriendSerializer
+
+    def list(self,request):
+        friends = models.Friend.objects.filter(user=request.user)
+        serializer = serializers.FriendSerializer(friends, many=True)
+        return Response({'message': 'OK!', 'status': True, 'data':serializer.data })
+
+    def create(self, request):
+        serializer = serializers.FriendSerializer(data = request.data)
+        if serializer.is_valid():
+            current_user = models.UserProfile.objects.filter(id = request.user.id).first()
+            user_instance = models.UserProfile.objects.filter(id = request.data.get('friend')).first()
+            if user_instance is None or current_user is None or user_instance.id == request.user.id:
+                return Response(
+                    {'message': 'An error due to user not found', 'status': False, 'errors': serializer.errors},
+                    status=status.HTTP_404_NOT_FOUND)
+
+            self.check_object_permissions(request, current_user)
+            friend = models.Friend(user = request.user, friend = user_instance)
+            friend.save()
+            return Response({'message':'Successfully created', 'status': True, 'data': serializer.data})
+
+        return Response({'message': 'An error due to bad request', 'status': False, 'errors': serializer.errors},
+                        status=status.HTTP_400_BAD_REQUEST)
+
 

@@ -10,6 +10,7 @@ router.register('register', views.RegisterViewSet, basename='register')
 router.register('rundown', views.RundownViewSet, basename='rundown')
 router.register('user', views.UserProfileViewSet, basename='user')
 router.register('rundown_detail', views.RundownDetailViewSet, basename='rundown_detail')
+router.register('friend', views.FriendViewSet, basename='friend')
 
 urlpatterns = [
     path('', include(router.urls))

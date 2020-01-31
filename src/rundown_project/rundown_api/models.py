@@ -69,9 +69,10 @@ class RundownDetail(models.Model):
         return self.title
 
 class Friend(models.Model):
-    user = models.ForeignKey(UserProfile, on_delete= models.CASCADE, related_name = "user")
-    friend = models.ForeignKey(UserProfile, on_delete= models.CASCADE, related_name = "friend")
+    user = models.ForeignKey(UserProfile, on_delete= models.CASCADE, related_name = "user", default=None)
+    friend  = models.ForeignKey(UserProfile, on_delete= models.CASCADE, related_name = "friend", default=None)
     is_blocked = models.BooleanField(default=False)
+    is_accepted = models.BooleanField(default=False)
 
     def __str__(self):
         return str(self.user)
