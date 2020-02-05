@@ -11,6 +11,7 @@ router.register('rundown', views.RundownViewSet, basename='rundown')
 router.register('user', views.UserProfileViewSet, basename='user')
 router.register('rundown_detail', views.RundownDetailViewSet, basename='rundown_detail')
 router.register('friend', views.FriendViewSet, basename='friend')
+router.register('reorder', views.ReoderRundownDetailViewSet, basename='reorder')
 
 urlpatterns = [
     path('', include(router.urls))

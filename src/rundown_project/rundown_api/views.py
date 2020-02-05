@@ -5,6 +5,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework import filters
 from rest_framework.authtoken.serializers import AuthTokenSerializer
 from rest_framework.permissions import IsAuthenticated
+from django.db.transaction import atomic
 from . import serializers
 from . import permissions
 from . import models
@@ -109,14 +110,19 @@ class UserProfileViewSet(viewsets.ViewSet):
                 status=status.HTTP_400_BAD_REQUEST)
 
     def destroy(self, request, pk=None):
-        user = models.UserProfile.objects.filter(id = pk).first()
-        if user is None:
-            return Response({'message':'User not found', 'status':False, 'data':{}},
-                            status = status.HTTP_404_NOT_FOUND)
+        try:
+            user = models.UserProfile.objects.filter(id = pk).first()
+            if user is None:
+                return Response({'message':'User not found', 'status':False, 'data':{}},
+                                status = status.HTTP_404_NOT_FOUND)
 
-        self.check_object_permissions(request, user)
-        user.delete()
-        return Response({'message': 'Successfully deleted', 'status': True, 'data': {}})
+            self.check_object_permissions(request, user)
+            user.delete()
+            return Response({'message': 'Successfully deleted', 'status': True, 'data': {}})
+        except Exception as e:
+            print(e)
+            pass
+
 
 
 class RundownViewSet(viewsets.ViewSet):
@@ -125,7 +131,7 @@ class RundownViewSet(viewsets.ViewSet):
     permission_classes = (permissions.PostOnRundown,IsAuthenticated)
 
     def list(self, request):
-        rundowns = models.Rundown.objects.filter(user_profile = request.user)
+        rundowns = models.Rundown.objects.filter(user_profile = request.user).order_by('-updated_on')
         serializer = serializers.RundownSerializer(rundowns, many=True)
         return Response({'message':'OK!', 'status': True, 'data':serializer.data})
 
@@ -146,7 +152,7 @@ class RundownViewSet(viewsets.ViewSet):
         if rundown is None:
             return Response({'message': 'Rundown not found', 'status': False, 'data': {}}, status = status.HTTP_404_NOT_FOUND)
         else:
-            rundown_details = models.RundownDetail.objects.filter(rundown_id= rundown.id)
+            rundown_details = models.RundownDetail.objects.filter(rundown_id= rundown.id).order_by('order_num')
             rundown_details = serializers.RundownDetailSerializer(rundown_details, many=True)
             serializer = serializers.RundownSerializer(rundown)
             return Response({'message': 'OK!', 'status': True, 'data': {
@@ -215,9 +221,15 @@ class RundownDetailViewSet(viewsets.ViewSet):
                      'errors': serializer.errors},
                     status=status.HTTP_400_BAD_REQUEST)
 
+            already_stored_item = models.RundownDetail.objects.filter(rundown = rundown.id).order_by('-order_num').first()
+            i = 0
+            if already_stored_item is not None:
+                i = already_stored_item.order_num+1
+
+            print(str(i))
             rundown_item = models.RundownDetail(title = serializer.data.get('title'),
                                      description = serializer.data.get('description'),
-                                     rundown = rundown)
+                                     rundown = rundown, order_num = i)
             rundown_item.save()
             return Response({'message':'Successfully created', 'status': True, 'data': serializer.data})
 
@@ -308,4 +320,39 @@ class FriendViewSet(viewsets.ViewSet):
         return Response({'message': 'An error due to bad request', 'status': False, 'errors': serializer.errors},
                         status=status.HTTP_400_BAD_REQUEST)
 
+
+class ReoderRundownDetailViewSet(viewsets.ViewSet):
+    authentication_classes = (TokenAuthentication,)
+    serializer_class = serializers.ReorderRundownDetailSerializer
+    permission_classes = (permissions.PostOnRundown,IsAuthenticated)
+
+    def create(self,request):
+        # its actually update
+        try:
+            serializer = serializers.ReorderRundownDetailSerializer(data=request.data, many=True)
+            if serializer.is_valid():
+                datas = serializer.data
+                print(datas[0])
+                # print(datas)
+                for data in datas:
+                    print("0")
+                    print(data['rundown_id'])
+                    rundown = models.Rundown.objects.filter(id=data['rundown_id']).first()
+                    if rundown is not None:
+                        print("1")
+                        self.check_object_permissions(request, rundown)
+                        rundown_detail = models.RundownDetail.objects.filter(id = data['id']).first()
+                        print("2")
+                        if rundown_detail is not None:
+                            s = serializers.RundownDetailSerializer(rundown_detail, data=data,partial=True)
+                            if s.is_valid(raise_exception=True):
+                                s.save()
+
+                return Response({'message':"Success reorder!", 'status':False, 'data':serializer.data})
+
+                # with atomic():
+            return Response({'message':serializer.errors})
+        except Exception as e:
+            print(e)
+            return Response({'message':str(e), 'status':False})
 

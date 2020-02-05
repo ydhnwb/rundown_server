@@ -28,3 +28,8 @@ class FriendSerializer(serializers.ModelSerializer):
         model = models.Friend
         fields = ("id", "user", "is_blocked", "is_accepted", "friend")
         extra_kwargs = {"user": {"read_only": True}}
+
+class ReorderRundownDetailSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    rundown_id = serializers.IntegerField()
+    order_num = serializers.IntegerField()
