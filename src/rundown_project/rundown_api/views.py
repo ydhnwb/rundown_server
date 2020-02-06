@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.authtoken.models import Token
 from rest_framework import filters
+from django.db.models import Q
 from rest_framework.authtoken.serializers import AuthTokenSerializer
 from rest_framework.permissions import IsAuthenticated
 from django.db.transaction import atomic
@@ -54,9 +55,10 @@ class RegisterViewSet(viewsets.ViewSet):
 class UserProfileViewSet(viewsets.ViewSet):
     authentication_classes = (TokenAuthentication,)
     permission_classes = (permissions.IsTheOwner,IsAuthenticated)
-    filter_backends = (filters.SearchFilter,)
-    search_fields = ('name', 'email')
     serializer_class = (serializers.UserProfileSerializer,)
+    # filter_backends = (filters.SearchFilter,)
+    # search_fields = ('name', 'email')
+
 
     def list(self, request):
         serializer = serializers.UserProfileSerializer(models.UserProfile.objects.all(), many=True)
@@ -356,3 +358,22 @@ class ReoderRundownDetailViewSet(viewsets.ViewSet):
             print(e)
             return Response({'message':str(e), 'status':False})
 
+
+class SearchViewSet(viewsets.ViewSet):
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (IsAuthenticated,)
+
+    def create(self, request):
+        users = models.UserProfile.objects.filter(Q(name__istartswith = request.data.get('query')) | Q(email = request.data.get('query')))
+        print(users)
+        user_serializer = serializers.UserProfileSerializer(users, many = True)
+
+        rundowns = models.Rundown.objects.filter(Q(user_profile=request.user) and Q(title__istartswith = request.data.get('query'))).order_by('-updated_on')
+        rundown_serializer = serializers.RundownSerializer(rundowns, many=True)
+
+        # rundowns = models.Rundown.objects.filter(user_profile = request.user).order_by('-updated_on')
+        # serializer = serializers.RundownSerializer(rundowns, many=True)
+        return Response({'message':'OK!', 'status': True, 'data':{
+            'users':user_serializer.data,
+            'rundowns' : rundown_serializer.data
+        }})

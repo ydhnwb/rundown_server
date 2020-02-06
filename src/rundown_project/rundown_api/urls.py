@@ -12,7 +12,7 @@ router.register('user', views.UserProfileViewSet, basename='user')
 router.register('rundown_detail', views.RundownDetailViewSet, basename='rundown_detail')
 router.register('friend', views.FriendViewSet, basename='friend')
 router.register('reorder', views.ReoderRundownDetailViewSet, basename='reorder')
-
+router.register('search', views.SearchViewSet, basename='search')
 urlpatterns = [
     path('', include(router.urls))
 ]
