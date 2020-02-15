@@ -369,7 +369,8 @@ class FriendViewSet(viewsets.ViewSet):
                 return Response(
                     {'message': 'An error due to user not found', 'status': False, 'errors': serializer.errors},
                     status=status.HTTP_404_NOT_FOUND)
-            exists = models.UserProfile.objects.filter(Q(user = request.user) & Q(friend = request.data.get('frined'))).first()
+            # target = models.
+            exists = models.Friend.objects.filter(Q(user = request.user) & Q(friend = request.data.get('friend'))).first()
             if exists is None:
                 try:
                     with atomic():
