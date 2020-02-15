@@ -309,7 +309,7 @@ class FriendViewSet(viewsets.ViewSet):
     def friend_requests(self, request):
         friend_request = models.Friend.objects.filter(Q(friend = request.user) & Q(is_accepted = False))
         print(friend_request)
-        requests_serializer = serializers.OptFriendSerializer(friend_request, many=True)
+        requests_serializer = serializers.FriendSerializer(friend_request, many=True)
         return Response({'message':'OK!', 'status':True, 'data':requests_serializer.data})
 
     @action(detail=False, methods=['get'])

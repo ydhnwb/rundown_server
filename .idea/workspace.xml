@@ -2,8 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="57ce06d3-e756-412e-9cc7-b531f56ff13e" name="Default" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change beforePath="$PROJECT_DIR$/src/rundown_project/rundown_api/models.py" afterPath="$PROJECT_DIR$/src/rundown_project/rundown_api/models.py" />
       <change beforePath="$PROJECT_DIR$/src/rundown_project/rundown_api/serializers.py" afterPath="$PROJECT_DIR$/src/rundown_project/rundown_api/serializers.py" />
       <change beforePath="$PROJECT_DIR$/src/rundown_project/rundown_api/views.py" afterPath="$PROJECT_DIR$/src/rundown_project/rundown_api/views.py" />
     </list>
@@ -16,11 +14,11 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="views.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="views.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/rundown_project/rundown_api/views.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="46">
-              <caret line="303" column="112" lean-forward="false" selection-start-line="303" selection-start-column="112" selection-end-line="303" selection-end-column="112" />
+            <state relative-caret-position="140">
+              <caret line="311" column="42" lean-forward="true" selection-start-line="311" selection-start-column="42" selection-end-line="311" selection-end-column="42" />
               <folding>
                 <element signature="e#0#42#0" expanded="true" />
                 <element signature="e#8227#9028#0" expanded="false" />
@@ -69,11 +67,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="serializers.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="serializers.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/rundown_project/rundown_api/serializers.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="123">
-              <caret line="28" column="78" lean-forward="false" selection-start-line="28" selection-start-column="78" selection-end-line="28" selection-end-column="78" />
+              <caret line="29" column="48" lean-forward="true" selection-start-line="29" selection-start-column="48" selection-end-line="29" selection-end-column="48" />
               <folding>
                 <element signature="e#0#38#0" expanded="true" />
               </folding>
@@ -134,8 +132,8 @@
         <option value="$PROJECT_DIR$/src/rundown_project/rundown_project/settings.py" />
         <option value="$PROJECT_DIR$/src/rundown_project/rundown_api/urls.py" />
         <option value="$PROJECT_DIR$/src/rundown_project/rundown_api/models.py" />
-        <option value="$PROJECT_DIR$/src/rundown_project/rundown_api/views.py" />
         <option value="$PROJECT_DIR$/src/rundown_project/rundown_api/serializers.py" />
+        <option value="$PROJECT_DIR$/src/rundown_project/rundown_api/views.py" />
       </list>
     </option>
   </component>
@@ -706,23 +704,23 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/rundown_project/rundown_api/views.py">
+    <entry file="file://$PROJECT_DIR$/src/rundown_project/rundown_api/serializers.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="46">
-          <caret line="303" column="112" lean-forward="false" selection-start-line="303" selection-start-column="112" selection-end-line="303" selection-end-column="112" />
+        <state relative-caret-position="123">
+          <caret line="29" column="48" lean-forward="true" selection-start-line="29" selection-start-column="48" selection-end-line="29" selection-end-column="48" />
           <folding>
-            <element signature="e#0#42#0" expanded="true" />
-            <element signature="e#8227#9028#0" expanded="false" />
+            <element signature="e#0#38#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/rundown_project/rundown_api/serializers.py">
+    <entry file="file://$PROJECT_DIR$/src/rundown_project/rundown_api/views.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="123">
-          <caret line="28" column="78" lean-forward="false" selection-start-line="28" selection-start-column="78" selection-end-line="28" selection-end-column="78" />
+        <state relative-caret-position="140">
+          <caret line="311" column="42" lean-forward="true" selection-start-line="311" selection-start-column="42" selection-end-line="311" selection-end-column="42" />
           <folding>
-            <element signature="e#0#38#0" expanded="true" />
+            <element signature="e#0#42#0" expanded="true" />
+            <element signature="e#8227#9028#0" expanded="false" />
           </folding>
         </state>
       </provider>

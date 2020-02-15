@@ -23,6 +23,7 @@ class RundownSerializer(serializers.ModelSerializer):
 
 class FriendSerializer(serializers.ModelSerializer):
     friend = UserProfileSerializer(required=False)
+    user = UserProfileSerializer(required=False)
 
     class Meta:
         model = models.Friend
