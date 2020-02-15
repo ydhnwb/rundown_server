@@ -300,9 +300,48 @@ class FriendViewSet(viewsets.ViewSet):
     serializer_class = serializers.FriendSerializer
 
     def list(self,request):
-        friends = models.Friend.objects.filter(user=request.user)
-        serializer = serializers.FriendSerializer(friends, many=True)
-        return Response({'message': 'OK!', 'status': True, 'data':serializer.data })
+        friends_accepted = models.Friend.objects.filter(Q(user=request.user) & Q(is_accepted = True))
+        friends_requested = models.Friend.objects.filter(Q(user=request.user) & Q(is_accepted = False))
+        friend_request = models.Friend.objects.filter(Q(friend = request.user) & Q(is_accepted = False))
+        accepted_serializer = serializers.FriendSerializer(friends_accepted, many=True)
+        requested_serializer = serializers.FriendSerializer(friends_requested, many=True)
+        requests_serializer = serializers.FriendSerializer(friend_request, many=True)
+        return Response({'message': 'OK!', 'status': True, 'data':{
+            'friends' : accepted_serializer.data,
+            'requested' : requested_serializer.data,
+            'friend_request' : requests_serializer.data
+        } })
+
+    def retrieve(self, request, pk=None):
+        print("a")
+
+
+    def partial_update(self, request, pk=None):
+        try:
+            friend = models.Friend.objects.filter(id=pk).first()
+            if friend is None:
+                return Response({'message': 'User item not found', 'status': False, 'data': {}}, status=status.HTTP_404_NOT_FOUND)
+            else:
+                if friend.user == request.user:
+                    with atomic():
+                        serializer = serializers.FriendSerializer(friend, data = request.data, partial=True)
+                        target_friend = models.Friend.objects.filter(Q(user = friend.friend.id) & Q(friend = request.user)).first()
+                        print(target_friend)
+                        print(friend)
+                        target_serializer = serializers.FriendSerializer(target_friend, data=request.data, partial=True)
+                        if serializer.is_valid() and target_serializer.is_valid():
+                            serializer.save()
+                            target_serializer.save()
+                            return Response({'message': 'Accepted', 'status': True, 'data': serializer.data})
+                        else:
+                            return Response({'message': 'An error due to bad request', 'status': False,
+                                             'errors': serializer.errors},
+                                            status=status.HTTP_400_BAD_REQUEST)
+
+                else:
+                    return Response({'message': 'Cannot change other preference', 'status': False, 'data': {}})
+        except Exception as e:
+            return Response({'message': 'An error due to bad request', 'status': False, 'errors': str(e)},status=status.HTTP_400_BAD_REQUEST)
 
     def create(self, request):
         serializer = serializers.FriendSerializer(data = request.data)
@@ -312,20 +351,24 @@ class FriendViewSet(viewsets.ViewSet):
                 return Response(
                     {'message': 'An error due to user not found', 'status': False, 'errors': serializer.errors},
                     status=status.HTTP_404_NOT_FOUND)
-            try:
-                with atomic():
-                    friend = models.Friend(user = request.user, friend = user_instance)
-                    friend.save()
-                    target_friend = models.Friend(user = user_instance, friend = request.user)
-                    target_friend.save()
-                    return Response({'message': 'Successfully created', 'status': True, 'data': serializer.data})
-            except Exception as e:
-                print(e)
+            exists = models.UserProfile.objects.filter(Q(user = request.user) & Q(friend = request.data.get('frined'))).first()
+            if exists is None:
+                try:
+                    with atomic():
+                        friend = models.Friend(user = request.user, friend = user_instance)
+                        friend.save()
+                        target_friend = models.Friend(user = user_instance, friend = request.user)
+                        target_friend.save()
+                        return Response({'message': 'Successfully created', 'status': True, 'data': serializer.data})
+                except Exception as e:
+                    print(e)
+                    return Response(
+                        {'message': 'An error due to bad request', 'status': False, 'errors': serializer.errors},
+                        status=status.HTTP_400_BAD_REQUEST)
+            else:
                 return Response(
-                    {'message': 'An error due to bad request', 'status': False, 'errors': serializer.errors},
+                    {'message': 'Already requested or friend', 'status': False, 'errors': serializer.errors},
                     status=status.HTTP_400_BAD_REQUEST)
-
-
 
         return Response({'message': 'An error due to bad request', 'status': False, 'errors': serializer.errors},
                         status=status.HTTP_400_BAD_REQUEST)
@@ -355,7 +398,7 @@ class ReoderRundownDetailViewSet(viewsets.ViewSet):
 
                 return Response({'message':"Success reorder!", 'status':False, 'data':serializer.data})
 
-            return Response({'message':serializer.errors})
+            return Response({'message':'Data given is not valid', 'status':False, 'errors':serializer.errors})
         except Exception as e:
             print(e)
             return Response({'message':str(e), 'status':False, 'data':{}})
@@ -368,7 +411,7 @@ class SearchViewSet(viewsets.ViewSet):
     def create(self, request):
         users = models.UserProfile.objects.filter(Q(name__istartswith = request.data.get('query')) | Q(email = request.data.get('query')))
         user_serializer = serializers.UserProfileSerializer(users, many = True)
-        rundowns = models.Rundown.objects.filter(Q(user_profile=request.user) and Q(title__istartswith = request.data.get('query'))).order_by('-updated_on')
+        rundowns = models.Rundown.objects.filter(Q(user_profile=request.user) & Q(title__istartswith = request.data.get('query'))).order_by('-updated_on')
         rundown_serializer = serializers.RundownSerializer(rundowns, many=True)
         # rundowns = models.Rundown.objects.filter(user_profile = request.user).order_by('-updated_on')
         # serializer = serializers.RundownSerializer(rundowns, many=True)
