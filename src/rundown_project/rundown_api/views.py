@@ -299,20 +299,27 @@ class FriendViewSet(viewsets.ViewSet):
     serializer_class = serializers.FriendSerializer
 
 
+    @action(detail=False, methods=['post'])
+    def check_friendship_status(self, request):
+        friend = models.Friend.objects.filter(Q(user=request.user) & Q(friend = request.data.get('id'))).first()
+        serializer = serializers.FriendSerializer(friend)
+        return Response({'message': 'OK!', 'status': True, 'data': serializer.data })
+
     @action(detail=False, methods=['get'])
     def friend_requests(self, request):
         friend_request = models.Friend.objects.filter(Q(friend = request.user) & Q(is_accepted = False))
-        requests_serializer = serializers.FriendSerializer(friend_request, many=True)
+        print(friend_request)
+        requests_serializer = serializers.OptFriendSerializer(friend_request, many=True)
         return Response({'message':'OK!', 'status':True, 'data':requests_serializer.data})
 
     @action(detail=False, methods=['get'])
     def requested(self, request):
-        friends_requested = models.Friend.objects.filter(Q(user=request.user) & Q(is_accepted = False))
+        friends_requested = models.Friend.objects.filter(Q(user=request.user) & Q(is_accepted = False) & Q(requested_by = request.user))
         requested_serializer = serializers.FriendSerializer(friends_requested, many=True)
         return Response({'message':'OK!', 'status':True, 'data':requested_serializer.data})
 
     def list(self,request):
-        friends = models.Friend.objects.filter(user=request.user)
+        friends = models.Friend.objects.filter(Q(user=request.user) & Q(is_accepted = True))
         accepted_serializer = serializers.FriendSerializer(friends, many=True)
         return Response({'message': 'OK!', 'status': True, 'data': accepted_serializer.data })
 
@@ -374,9 +381,9 @@ class FriendViewSet(viewsets.ViewSet):
             if exists is None:
                 try:
                     with atomic():
-                        friend = models.Friend(user = request.user, friend = user_instance)
+                        friend = models.Friend(user = request.user, friend = user_instance, requested_by = request.user)
                         friend.save()
-                        target_friend = models.Friend(user = user_instance, friend = request.user)
+                        target_friend = models.Friend(user = user_instance, friend = request.user, requested_by = request.user)
                         target_friend.save()
                         return Response({'message': 'Successfully created', 'status': True, 'data': serializer.data})
                 except Exception as e:

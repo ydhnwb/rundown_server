@@ -26,7 +26,15 @@ class FriendSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Friend
-        fields = ("id", "user", "is_blocked", "is_accepted", "friend")
+        fields = ("id", "user", "is_blocked", "is_accepted", "requested_by", "friend")
+        extra_kwargs = {"user": {"read_only": True}}
+
+class OptFriendSerializer(serializers.ModelSerializer):
+    user = UserProfileSerializer(required=False)
+
+    class Meta:
+        model = models.Friend
+        fields = ("id", "user", "is_blocked", "is_accepted", "requested_by","friend")
         extra_kwargs = {"user": {"read_only": True}}
 
 class ReorderRundownDetailSerializer(serializers.Serializer):
