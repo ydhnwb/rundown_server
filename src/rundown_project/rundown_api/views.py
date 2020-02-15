@@ -307,17 +307,25 @@ class FriendViewSet(viewsets.ViewSet):
     def create(self, request):
         serializer = serializers.FriendSerializer(data = request.data)
         if serializer.is_valid():
-            current_user = models.UserProfile.objects.filter(id = request.user.id).first()
             user_instance = models.UserProfile.objects.filter(id = request.data.get('friend')).first()
-            if user_instance is None or current_user is None or user_instance.id == request.user.id:
+            if user_instance is None or request.user is None or user_instance.id == request.user.id:
                 return Response(
                     {'message': 'An error due to user not found', 'status': False, 'errors': serializer.errors},
                     status=status.HTTP_404_NOT_FOUND)
+            try:
+                with atomic():
+                    friend = models.Friend(user = request.user, friend = user_instance)
+                    friend.save()
+                    target_friend = models.Friend(user = user_instance, friend = request.user)
+                    target_friend.save()
+                    return Response({'message': 'Successfully created', 'status': True, 'data': serializer.data})
+            except Exception as e:
+                print(e)
+                return Response(
+                    {'message': 'An error due to bad request', 'status': False, 'errors': serializer.errors},
+                    status=status.HTTP_400_BAD_REQUEST)
 
-            self.check_object_permissions(request, current_user)
-            friend = models.Friend(user = request.user, friend = user_instance)
-            friend.save()
-            return Response({'message':'Successfully created', 'status': True, 'data': serializer.data})
+
 
         return Response({'message': 'An error due to bad request', 'status': False, 'errors': serializer.errors},
                         status=status.HTTP_400_BAD_REQUEST)
@@ -334,29 +342,23 @@ class ReoderRundownDetailViewSet(viewsets.ViewSet):
             serializer = serializers.ReorderRundownDetailSerializer(data=request.data, many=True)
             if serializer.is_valid():
                 datas = serializer.data
-                print(datas[0])
-                # print(datas)
-                for data in datas:
-                    print("0")
-                    print(data['rundown_id'])
-                    rundown = models.Rundown.objects.filter(id=data['rundown_id']).first()
-                    if rundown is not None:
-                        print("1")
-                        self.check_object_permissions(request, rundown)
-                        rundown_detail = models.RundownDetail.objects.filter(id = data['id']).first()
-                        print("2")
-                        if rundown_detail is not None:
-                            s = serializers.RundownDetailSerializer(rundown_detail, data=data,partial=True)
-                            if s.is_valid(raise_exception=True):
-                                s.save()
+                with atomic():
+                    for data in datas:
+                        rundown = models.Rundown.objects.filter(id=data['rundown_id']).first()
+                        if rundown is not None:
+                            self.check_object_permissions(request, rundown)
+                            rundown_detail = models.RundownDetail.objects.filter(id = data['id']).first()
+                            if rundown_detail is not None:
+                                s = serializers.RundownDetailSerializer(rundown_detail, data=data,partial=True)
+                                if s.is_valid(raise_exception=True):
+                                    s.save()
 
                 return Response({'message':"Success reorder!", 'status':False, 'data':serializer.data})
 
-                # with atomic():
             return Response({'message':serializer.errors})
         except Exception as e:
             print(e)
-            return Response({'message':str(e), 'status':False})
+            return Response({'message':str(e), 'status':False, 'data':{}})
 
 
 class SearchViewSet(viewsets.ViewSet):
@@ -365,12 +367,9 @@ class SearchViewSet(viewsets.ViewSet):
 
     def create(self, request):
         users = models.UserProfile.objects.filter(Q(name__istartswith = request.data.get('query')) | Q(email = request.data.get('query')))
-        print(users)
         user_serializer = serializers.UserProfileSerializer(users, many = True)
-
         rundowns = models.Rundown.objects.filter(Q(user_profile=request.user) and Q(title__istartswith = request.data.get('query'))).order_by('-updated_on')
         rundown_serializer = serializers.RundownSerializer(rundowns, many=True)
-
         # rundowns = models.Rundown.objects.filter(user_profile = request.user).order_by('-updated_on')
         # serializer = serializers.RundownSerializer(rundowns, many=True)
         return Response({'message':'OK!', 'status': True, 'data':{
