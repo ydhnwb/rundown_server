@@ -7,6 +7,7 @@ from django.db.models import Q
 from rest_framework.authtoken.serializers import AuthTokenSerializer
 from rest_framework.permissions import IsAuthenticated
 from django.db.transaction import atomic
+from rest_framework.decorators import action
 from . import serializers
 from . import permissions
 from . import models
@@ -228,9 +229,7 @@ class RundownDetailViewSet(viewsets.ViewSet):
             if already_stored_item is not None:
                 i = already_stored_item.order_num+1
 
-            print(str(i))
-            rundown_item = models.RundownDetail(title = serializer.data.get('title'),
-                                     description = serializer.data.get('description'),
+            rundown_item = models.RundownDetail(title = serializer.data.get('title'),description = serializer.data.get('description'),
                                      rundown = rundown, order_num = i)
             rundown_item.save()
             return Response({'message':'Successfully created', 'status': True, 'data': serializer.data})
@@ -299,21 +298,40 @@ class FriendViewSet(viewsets.ViewSet):
     permission_classes = (permissions.IsTheOwnerOfFriend, IsAuthenticated)
     serializer_class = serializers.FriendSerializer
 
-    def list(self,request):
-        friends_accepted = models.Friend.objects.filter(Q(user=request.user) & Q(is_accepted = True))
-        friends_requested = models.Friend.objects.filter(Q(user=request.user) & Q(is_accepted = False))
+
+    @action(detail=False, methods=['get'])
+    def friend_requests(self, request):
         friend_request = models.Friend.objects.filter(Q(friend = request.user) & Q(is_accepted = False))
-        accepted_serializer = serializers.FriendSerializer(friends_accepted, many=True)
-        requested_serializer = serializers.FriendSerializer(friends_requested, many=True)
         requests_serializer = serializers.FriendSerializer(friend_request, many=True)
-        return Response({'message': 'OK!', 'status': True, 'data':{
-            'friends' : accepted_serializer.data,
-            'requested' : requested_serializer.data,
-            'friend_request' : requests_serializer.data
-        } })
+        return Response({'message':'OK!', 'status':True, 'data':requests_serializer.data})
+
+    @action(detail=False, methods=['get'])
+    def requested(self, request):
+        friends_requested = models.Friend.objects.filter(Q(user=request.user) & Q(is_accepted = False))
+        requested_serializer = serializers.FriendSerializer(friends_requested, many=True)
+        return Response({'message':'OK!', 'status':True, 'data':requested_serializer.data})
+
+    def list(self,request):
+        friends = models.Friend.objects.filter(user=request.user)
+        accepted_serializer = serializers.FriendSerializer(friends, many=True)
+        return Response({'message': 'OK!', 'status': True, 'data': accepted_serializer.data })
+
+
+    def destroy(self, request, pk=None):
+        friendship = models.Friend.objects.filter(id=pk).first()
+        targeted_friend = models.Friend.objects.filter(Q(user = friendship.friend) & Q(friend = friendship.user))
+        friendship.delete()
+        targeted_friend.delete()
+        return Response({'message': 'Successfully deleted', 'status': True, 'data': {}})
+
 
     def retrieve(self, request, pk=None):
-        print("a")
+        friend = models.Friend.objects.filter(id=pk).first()
+        if friend is None:
+            return Response({'message': 'Friend not found', 'status': False, 'data': {}}, status = status.HTTP_404_NOT_FOUND)
+        else:
+            serializer = serializers.FriendSerializer(friend)
+            return Response({'message': 'OK!', 'status': True, 'data': serializer.data})
 
 
     def partial_update(self, request, pk=None):
