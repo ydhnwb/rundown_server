@@ -302,13 +302,14 @@ class FriendViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['post'])
     def check_friendship_status(self, request):
         friend = models.Friend.objects.filter(Q(user=request.user) & Q(friend = request.data.get('id'))).first()
+        if friend is None:
+            return Response({'message':'OK!', 'status':False, 'data': {}})
         serializer = serializers.FriendSerializer(friend)
         return Response({'message': 'OK!', 'status': True, 'data': serializer.data })
 
     @action(detail=False, methods=['get'])
     def friend_requests(self, request):
         friend_request = models.Friend.objects.filter(Q(friend = request.user) & Q(is_accepted = False))
-        print(friend_request)
         requests_serializer = serializers.FriendSerializer(friend_request, many=True)
         return Response({'message':'OK!', 'status':True, 'data':requests_serializer.data})
 
